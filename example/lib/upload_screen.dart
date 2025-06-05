@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:multipart_uploader/multipart_uploader.dart';
 import 'package:wechat_assets_picker/wechat_assets_picker.dart';
 
@@ -293,24 +294,6 @@ class _UploadScreenState extends State<UploadScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.cloud_upload,
-                          size: 48, color: Colors.blue),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Upload Video lên AWS S3',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 20),
 
               // File Selection
@@ -535,6 +518,9 @@ class _UploadScreenState extends State<UploadScreen> {
                         const SizedBox(height: 4),
                         SelectableText(
                           _uploadedUrl!,
+                          onTap: () => Clipboard.setData(
+                            ClipboardData(text: _uploadedUrl!),
+                          ),
                           style: const TextStyle(
                             color: Colors.blue,
                             decoration: TextDecoration.underline,
