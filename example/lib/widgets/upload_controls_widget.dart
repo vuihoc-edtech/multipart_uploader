@@ -6,11 +6,11 @@ class UploadControlsWidget extends StatelessWidget {
   final VoidCallback onUpload;
 
   const UploadControlsWidget({
-    Key? key,
+    super.key,
     required this.isUploading,
     required this.uploadProgress,
     required this.onUpload,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

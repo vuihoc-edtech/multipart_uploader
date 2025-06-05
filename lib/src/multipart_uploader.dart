@@ -16,7 +16,7 @@ class MultipartUploader {
   final int defaultMaxConcurrentUploads;
   final _networkMetrics = NetworkMetrics();
 
-  int get speed => _networkMetrics.averageSpeedMBps.round();
+  double get speed => _networkMetrics.averageSpeedMBps;
 
   final List<UploadPart> parts = [];
   int fileSize = 0;

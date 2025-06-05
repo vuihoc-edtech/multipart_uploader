@@ -226,7 +226,8 @@ class _UploadScreenState extends State<UploadScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            Text('Speed: ${_uploader.speed} MB/s'),
+                            Text(
+                                'Speed: ${_uploader.speed.toStringAsFixed(2)} MB/s'),
                             Text(
                                 'File Size: ${(_uploader.fileSize / 1024 / 1024).toStringAsFixed(2)} MB'),
                             Text(

@@ -9,12 +9,12 @@ class FileSelectionWidget extends StatelessWidget {
   final VoidCallback onResetUpload;
 
   const FileSelectionWidget({
-    Key? key,
+    super.key,
     this.selectedFile,
     required this.isUploading,
     required this.onFileSelected,
     required this.onResetUpload,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

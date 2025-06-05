@@ -6,10 +6,10 @@ class ErrorMessageWidget extends StatelessWidget {
   final VoidCallback? onContinueUpload;
 
   const ErrorMessageWidget({
-    Key? key,
+    super.key,
     required this.errorMessage,
     this.onContinueUpload,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
