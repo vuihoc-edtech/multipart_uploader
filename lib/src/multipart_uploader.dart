@@ -54,6 +54,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
+    Function(Exception error)? onError,
     int? maxConcurrentUploads,
     int maxRetries = 3,
   }) async {
@@ -77,10 +78,18 @@ class MultipartUploader {
       return uploadResponse.s3Link;
     } catch (e, st) {
       _status = UploaderStatus.failed;
+      final exception = Exception('Upload failed: $e');
+
       if (kDebugMode) {
         print('Error during file upload: $e\n$st');
       }
-      throw Exception('Upload failed: $e');
+
+      // Gọi onError callback nếu có
+      if (onError != null) {
+        onError(exception);
+      }
+
+      throw exception;
     }
   }
 
@@ -109,6 +118,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
+    Function(Exception error)? onError,
     int maxRetries = 3,
   }) async {
     fileSize = await file.length();
@@ -118,6 +128,7 @@ class MultipartUploader {
       file,
       uploadResponse: uploadResponse,
       onProgress: onProgress,
+      onError: onError,
       maxConcurrentUploads: optimalConcurrency,
       maxRetries: maxRetries,
     );
@@ -128,6 +139,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
+    Function(Exception error)? onError,
     int maxRetries = 3,
   }) async {
     fileSize = await file.length();
@@ -158,6 +170,7 @@ class MultipartUploader {
       file,
       uploadResponse: uploadResponse,
       onProgress: onProgress,
+      onError: onError,
       maxConcurrentUploads: currentConcurrency,
       maxRetries: maxRetries,
     );
@@ -564,6 +577,7 @@ class MultipartUploader {
   /// Hàm continue để thử lại upload khi status là failed
   Future<String> continueUpload({
     Function(int progress)? onProgress,
+    Function(Exception error)? onError,
     int? maxConcurrentUploads,
   }) async {
     if (_status != UploaderStatus.failed) {
@@ -598,7 +612,15 @@ class MultipartUploader {
       if (kDebugMode) {
         print('Error during continue upload: $e\n$st');
       }
-      throw Exception('Continue upload failed: $e');
+
+      final exception = Exception('Continue upload failed: $e');
+
+      // Gọi onError callback nếu có
+      if (onError != null) {
+        onError(exception);
+      }
+
+      throw exception;
     }
   }
 

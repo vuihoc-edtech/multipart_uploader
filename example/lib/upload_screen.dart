@@ -29,21 +29,23 @@ class _UploadScreenState extends State<UploadScreen> {
   final token =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTY5ODYsImlhdCI6MTc0NzEyODU4MywiZXhwIjoxNzUyMzEyNTgzfQ.BU_2bVPdRXi8t5COoEA1hXQFBiVpUAGQhVIiffgfRyo';
 
+  /// Lấy link upload từ server
+  /// Trả về UploadResponse chứa thông tin upload lên S3
   Future<UploadResponse> _getUploadLink(File file) async {
     final fileName = file.path.split('/').last;
     final fileSize = await file.length();
 
-    final response = await Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        headers: {'Authorization': 'Bearer $token'},
-      ),
-    ).get(
+    final option = BaseOptions(
+      baseUrl: baseUrl,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    final query = {
+      'resourceName': Uri.encodeComponent(fileName),
+      'size': fileSize
+    };
+    final response = await Dio(option).get(
       '/api/project-assignment/upload-link',
-      queryParameters: {
-        'resourceName': Uri.encodeComponent(fileName),
-        'size': fileSize,
-      },
+      queryParameters: query,
     );
 
     return UploadResponse.fromJson(response.data['data']);
@@ -81,8 +83,6 @@ class _UploadScreenState extends State<UploadScreen> {
     }
   }
 
-  Map<int, int> _speedMap = {};
-
   /// Upload file lên S3
   Future<void> _uploadFile() async {
     if (_selectedFile == null) return;
@@ -101,25 +101,18 @@ class _UploadScreenState extends State<UploadScreen> {
         uploadResponse.s3UploadUrl.map((e) => e.toJson()).toList().join('\n'),
       );
 
-      final limitConcurrentUploads = 5;
       final startTime = DateTime.now();
       // Upload file với progress callback và auto-tuning
       final uploadedUrl = await _uploader.uploadFileOptimizedWithAutoTuning(
         _selectedFile!,
         uploadResponse: uploadResponse,
-        onProgress: (progress) {
-          setState(() {
-            _uploadProgress = progress;
-          });
-        },
+        onProgress: (progress) => setState(() => _uploadProgress = progress),
+        onError: (error) => print('Upload error: $error'),
       );
       final endTime = DateTime.now();
       final duration = endTime.difference(startTime).inSeconds;
-      _speedMap[limitConcurrentUploads] = duration;
 
-      print(
-        'Upload SPEEDMAP:\n${_speedMap.entries.map((e) => '${e.key} uploads: ${e.value}s').join('\n')}',
-      );
+      print('Upload SPEED: $duration}');
 
       // Upload thành công
       setState(() {
@@ -157,13 +150,12 @@ class _UploadScreenState extends State<UploadScreen> {
     });
 
     try {
-      final uploadedUrl = await _uploader.continueUpload(
-        onProgress: (progress) {
-          setState(() {
-            _uploadProgress = progress;
-          });
-        },
-      );
+      final uploadedUrl =
+          await _uploader.continueUpload(onProgress: (progress) {
+        setState(() {
+          _uploadProgress = progress;
+        });
+      });
 
       // Upload thành công
       setState(() {
