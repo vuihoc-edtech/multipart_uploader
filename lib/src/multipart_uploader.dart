@@ -44,6 +44,8 @@ class MultipartUploader {
   DateTime _lastProgressUpdate = DateTime.now();
   static const _progressUpdateInterval = Duration(milliseconds: 100);
 
+  int _lastTotalUploaded = 0;
+
   MultipartUploader({
     Dio? dio,
     this.defaultMaxConcurrentUploads = 3,
@@ -205,17 +207,21 @@ class MultipartUploader {
 
     // Function để update progress với throttling
     void updateProgress() {
-      if (onProgress != null) {
-        final now = DateTime.now();
-        if (now.difference(_lastProgressUpdate) >= _progressUpdateInterval) {
-          final totalUploaded = parts.fold(
-            0,
-            (sum, part) => sum + part.uploadedBytes,
-          );
-          final percent = ((totalUploaded * 100) / fileSize).round();
-          onProgress(percent.clamp(0, 100));
-          _lastProgressUpdate = now;
-        }
+      final now = DateTime.now();
+      if (now.difference(_lastProgressUpdate) >= _progressUpdateInterval) {
+        final totalUploaded = parts.fold(
+          0,
+          (sum, part) => sum + part.uploadedBytes,
+        );
+        final percent = ((totalUploaded * 100) / fileSize).round();
+        onProgress?.call(percent.clamp(0, 100));
+
+        _networkMetrics.updateSpeed(
+          totalUploaded - _lastTotalUploaded,
+          now.difference(_lastProgressUpdate),
+        );
+        _lastProgressUpdate = now;
+        _lastTotalUploaded = totalUploaded;
       }
     }
 
@@ -365,16 +371,11 @@ class MultipartUploader {
     for (int attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         part.status = PartStatus.inProgress;
-        final startTime = DateTime.now();
 
         await _uploadSinglePartStreaming(file, part, (sent) {
           part.uploadedBytes = sent;
           onProgress();
         });
-
-        final endTime = DateTime.now();
-        final duration = endTime.difference(startTime);
-        _networkMetrics.updateSpeed(part.length, duration);
 
         return; // Success
       } catch (e) {
