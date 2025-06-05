@@ -56,7 +56,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
-    Function(Exception error)? onError,
+    Function(Exception error, StackTrace st)? onError,
     int? maxConcurrentUploads,
     int maxRetries = 3,
   }) async {
@@ -88,7 +88,7 @@ class MultipartUploader {
 
       // Gọi onError callback nếu có
       if (onError != null) {
-        onError(exception);
+        onError(exception, st);
       }
 
       throw exception;
@@ -120,7 +120,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
-    Function(Exception error)? onError,
+    Function(Exception error, StackTrace st)? onError,
     int maxRetries = 3,
   }) async {
     fileSize = await file.length();
@@ -141,7 +141,7 @@ class MultipartUploader {
     File file, {
     required UploadResponse uploadResponse,
     Function(int progress)? onProgress,
-    Function(Exception error)? onError,
+    Function(Exception error, StackTrace st)? onError,
     int maxRetries = 3,
   }) async {
     fileSize = await file.length();
@@ -275,7 +275,7 @@ class MultipartUploader {
     final futures = partsToUpload.map((part) async {
       await semaphore.acquire();
       try {
-        await _uploadSinglePartWithRetry(file, part, () => updateProgress());
+        await _uploadSinglePartWithRetry(file, part, updateProgress);
         part.status = PartStatus.completed;
         part.isUploaded = true;
 
@@ -378,7 +378,8 @@ class MultipartUploader {
         });
 
         return; // Success
-      } catch (e) {
+      } catch (e, st) {
+        if (kDebugMode) print('_uploadSinglePartWithRetry: $e\n$st');
         if (attempt == maxRetries) {
           throw Exception(
             'Failed to upload part ${part.id} after $maxRetries retries: $e',
@@ -425,11 +426,7 @@ class MultipartUploader {
           'Content-Length': part.length.toString(),
         },
       ),
-      onSendProgress: (sent, total) {
-        if (onProgress != null) {
-          onProgress(sent);
-        }
-      },
+      onSendProgress: (sent, total) => onProgress?.call(sent),
     );
   }
 
@@ -578,7 +575,7 @@ class MultipartUploader {
   /// Hàm continue để thử lại upload khi status là failed
   Future<String> continueUpload({
     Function(int progress)? onProgress,
-    Function(Exception error)? onError,
+    Function(Exception error, StackTrace st)? onError,
     int? maxConcurrentUploads,
   }) async {
     if (_status != UploaderStatus.failed) {
@@ -618,7 +615,7 @@ class MultipartUploader {
 
       // Gọi onError callback nếu có
       if (onError != null) {
-        onError(exception);
+        onError(exception, st);
       }
 
       throw exception;

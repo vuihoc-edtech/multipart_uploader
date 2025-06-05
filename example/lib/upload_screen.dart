@@ -32,7 +32,8 @@ class _UploadScreenState extends State<UploadScreen> {
   int duration = 0;
 
   final baseUrl = 'https://devapi.vuihoc.vn';
-  final token = 'Token';
+  final token =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTY5ODYsImlhdCI6MTc0NzEyODU4MywiZXhwIjoxNzUyMzEyNTgzfQ.BU_2bVPdRXi8t5COoEA1hXQFBiVpUAGQhVIiffgfRyo';
 
   /// Lấy link upload từ server
   /// Trả về UploadResponse chứa thông tin upload lên S3
@@ -52,6 +53,8 @@ class _UploadScreenState extends State<UploadScreen> {
       '/api/project-assignment/upload-link',
       queryParameters: query,
     );
+
+    print(response.data);
 
     return UploadResponse.fromJson(response.data['data']);
   }
@@ -77,7 +80,7 @@ class _UploadScreenState extends State<UploadScreen> {
         _selectedFile!,
         uploadResponse: uploadResponse,
         onProgress: (progress) => setState(() => _uploadProgress = progress),
-        onError: (error) => print('Upload error: $error'),
+        onError: (error, st) => print('Upload error: $error\n$st'),
       );
 
       duration = DateTime.now().difference(startTime).inSeconds;
@@ -88,14 +91,15 @@ class _UploadScreenState extends State<UploadScreen> {
         _isUploading = false;
         _canContinue = false;
       });
-    } catch (e) {
+    } catch (e, st) {
       // Kiểm tra xem có phải lỗi network timeout không
       final isNetworkTimeout =
           e.toString().contains('Network appears to be down') ||
               e.toString().contains('continueUpload');
 
+      print('Upload thất bại: $e\n$st');
       setState(() {
-        _errorMessage = 'Upload thất bại: $e';
+        _errorMessage = 'Upload thất bại: $e\n$st';
         _isUploading = false;
         _canContinue =
             isNetworkTimeout && _uploader.status == UploaderStatus.failed;
