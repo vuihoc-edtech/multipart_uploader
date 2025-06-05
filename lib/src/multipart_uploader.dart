@@ -417,7 +417,7 @@ class MultipartUploader {
   ) async {
     final stream = file.openRead(part.offset, part.offset + part.length);
 
-    await _dio.put(
+    final res = await _dio.put(
       part.url,
       data: stream,
       options: Options(
@@ -428,6 +428,7 @@ class MultipartUploader {
       ),
       onSendProgress: (sent, total) => onProgress?.call(sent),
     );
+    part.etag = res.headers.value('etag')?.replaceAll('"', '');
   }
 
   /// Auto-tuning concurrency dựa trên network speed

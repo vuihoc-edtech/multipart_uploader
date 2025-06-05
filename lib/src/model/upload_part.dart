@@ -6,6 +6,7 @@ class UploadPart {
   final String url;
   final int offset;
   final int length;
+  String? etag;
 
   int uploadedBytes = 0;
   bool isUploaded = false;
@@ -16,6 +17,7 @@ class UploadPart {
     required this.offset,
     required this.length,
     this.id = 0,
+    this.etag,
   });
 
   factory UploadPart.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,13 @@ class UploadPart {
   }
 
   Map<String, dynamic> toJson() {
-    return {'part': id, 'offset': offset, 'length': length};
+    return {
+      'part': id,
+      'offset': offset,
+      'length': length,
+      'url': url,
+      'ETag': etag,
+      'PartNumber': id,
+    };
   }
 }

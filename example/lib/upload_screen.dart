@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -19,6 +21,8 @@ final option = BaseOptions(
   baseUrl: baseUrl,
   headers: {'Authorization': 'Bearer $token'},
 );
+
+final dio = Dio(option);
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -49,14 +53,39 @@ class _UploadScreenState extends State<UploadScreen> {
       'resourceName': Uri.encodeComponent(fileName),
       'size': fileSize
     };
-    final response = await Dio(option).get(
+    final response = await dio.get(
       '/api/project-assignment/upload-link',
       queryParameters: query,
     );
 
-    print(response.data);
+    log(jsonEncode(response.data), name: 'API');
 
     return UploadResponse.fromJson(response.data['data']);
+  }
+
+  // Submit on completed
+  /// Hàm này sẽ được gọi khi upload hoàn tất
+  /// Nó sẽ gửi thông tin upload lên server để lưu trữ
+  Future<void> _onSubmitCompleted(UploadResponse uploadResponse) async {
+    final body = {
+      'uploadId': uploadResponse.uploadId,
+      'key': uploadResponse.s3Key,
+      'parts': uploadResponse.s3UploadUrl.map((e) => e.toJson()).toList(),
+      'link_store': uploadResponse.s3Link,
+      'result_id': 4,
+      'section_type': 9,
+    };
+
+    log(jsonEncode(body), name: 'Submit Completed');
+
+    final response =
+        await dio.post('/api/project-assignment/submit', data: body);
+
+    if (response.statusCode == 200) {
+      print('Upload completed successfully ${response.data}');
+    } else {
+      print('Failed to complete upload: ${response.data}');
+    }
   }
 
   /// Upload file lên S3
@@ -84,6 +113,7 @@ class _UploadScreenState extends State<UploadScreen> {
       );
 
       duration = DateTime.now().difference(startTime).inSeconds;
+      await _onSubmitCompleted(uploadResponse);
 
       // Upload thành công
       setState(() {
