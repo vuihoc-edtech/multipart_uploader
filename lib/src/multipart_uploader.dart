@@ -453,9 +453,13 @@ class MultipartUploader {
       return false;
     }
 
-    // Lần đầu mở circuit breaker, ghi lại thời gian
+    // Lần đầu mở circuit breaker, ghi lại thời gian (chỉ set một lần)
     if (_circuitBreakerOpenTime == null) {
-      _circuitBreakerOpenTime = DateTime.now();
+      _circuitBreakerOpenTime =
+          _lastFailureTime; // Dùng thời gian của failure cuối cùng
+      if (kDebugMode) {
+        print('Circuit breaker opened at: $_circuitBreakerOpenTime');
+      }
     }
 
     final timeSinceLastFailure = DateTime.now().difference(_lastFailureTime!);
