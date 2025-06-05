@@ -11,6 +11,15 @@ import 'widgets/upload_controls_widget.dart';
 import 'widgets/status_message_widgets.dart';
 import 'widgets/upload_dialogs.dart';
 
+/// Cấu hình Dio với baseUrl và token từ environment variables
+/// Bạn cần cấu hình BASE_URL và TOKEN khi build ứng dụng
+const baseUrl = String.fromEnvironment('BASE_URL');
+const token = String.fromEnvironment('TOKEN');
+final option = BaseOptions(
+  baseUrl: baseUrl,
+  headers: {'Authorization': 'Bearer $token'},
+);
+
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
 
@@ -31,20 +40,11 @@ class _UploadScreenState extends State<UploadScreen> {
   String? _errorMessage;
   int duration = 0;
 
-  final baseUrl = 'https://devapi.vuihoc.vn';
-  final token =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTY5ODYsImlhdCI6MTc0NzEyODU4MywiZXhwIjoxNzUyMzEyNTgzfQ.BU_2bVPdRXi8t5COoEA1hXQFBiVpUAGQhVIiffgfRyo';
-
   /// Lấy link upload từ server
   /// Trả về UploadResponse chứa thông tin upload lên S3
   Future<UploadResponse> _getUploadLink(File file) async {
     final fileName = file.path.split('/').last;
     final fileSize = await file.length();
-
-    final option = BaseOptions(
-      baseUrl: baseUrl,
-      headers: {'Authorization': 'Bearer $token'},
-    );
     final query = {
       'resourceName': Uri.encodeComponent(fileName),
       'size': fileSize
@@ -192,7 +192,7 @@ class _UploadScreenState extends State<UploadScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-
+              const Text('BASE_URL: $baseUrl'),
               // File Selection Widget
               FileSelectionWidget(
                 selectedFile: _selectedFile,

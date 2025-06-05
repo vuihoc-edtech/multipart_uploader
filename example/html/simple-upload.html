@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple S3 Upload</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .file-input {
+            margin: 20px 0;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 20px;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:disabled {
+            background-color: #cccccc;
+        }
+
+        .status {
+            margin-top: 20px;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Simple S3 Multipart Upload</h1>
+
+    <div class="file-input">
+        <input type="file" id="fileInput">
+    </div>
+
+    <button id="uploadBtn" class="btn" disabled>Upload</button>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="result" style="display: none;">
+        <h3>Upload Result:</h3>
+        <pre id="resultContent"></pre>
+    </div>
+
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressBar = document.getElementById('progressBar');
+        const status = document.getElementById('status');
+        const result = document.getElementById('result');
+        const resultContent = document.getElementById('resultContent');
+
+        // API Configuration
+        const BASE_URL = 'https://devapi.vuihoc.vn';
+        var TOKEN = 'Token';
+
+        // Enable upload button when file is selected
+        fileInput.addEventListener('change', () => {
+            uploadBtn.disabled = !fileInput.files.length;
+        });
+
+        // Upload process
+        uploadBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Reset UI
+            progressBar.style.width = '0%';
+            status.textContent = 'Starting upload...';
+            status.className = 'status';
+            result.style.display = 'none';
+            uploadBtn.disabled = true;
+
+            try {
+                // Step 1: Get upload link from server
+                status.textContent = 'Getting upload link...';
+                const res = await axios.get(`${BASE_URL}/api/project-assignment/upload-link`, {
+                    params: {
+                        resourceName: encodeURIComponent(file.name),
+                        size: file.size
+                    },
+                    headers: {
+                        'Authorization': `Bearer ${TOKEN}`
+                    }
+                });
+
+                console.log('Upload link response:', res.data);
+
+                const { s3UploadUrl, s3Link } = res.data.data;
+
+                // Track upload progress
+                let uploadedBytes = 0;
+
+                // Function to update progress
+                function setProgress(percent) {
+                    progressBar.style.width = `${percent}%`;
+                    status.textContent = `Uploading: ${percent}%`;
+                }
+
+                status.textContent = 'Uploading file parts...';
+
+                // Step 2: Upload each part
+                await Promise.all(
+                    s3UploadUrl.map(async (part, index) => {
+                        // Extract chunk from file
+                        const chunk = file.slice(part.offset, part.offset + part.length);
+
+                        console.log(`Uploading part ${index + 1}/${s3UploadUrl.length}: offset=${part.offset}, length=${part.length}`);
+
+                        // Create a new axios instance for S3 upload
+                        // This prevents authorization header conflicts with pre-signed URLs
+                        const s3Client = axios.create();
+
+                        await s3Client.put(part.url, chunk, {
+                            headers: {
+                                'Content-Type': 'application/octet-stream'
+                            },
+                            onUploadProgress: (event) => {
+                                uploadedBytes += event.loaded;
+                                const percent = Math.min(
+                                    Math.round((uploadedBytes * 100) / file.size),
+                                    100
+                                );
+                                setProgress(percent);
+                            }
+                        });
+
+                        console.log(`Part ${index + 1} uploaded successfully`);
+                    })
+                );
+
+                // Show success
+                status.textContent = 'Upload completed successfully!';
+                status.className = 'status success';
+
+                // Display result
+                result.style.display = 'block';
+                resultContent.textContent = JSON.stringify({
+                    success: true,
+                    filename: file.name,
+                    size: file.size,
+                    url: s3Link,
+                    parts: s3UploadUrl.length
+                }, null, 2);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+
+                let errorMessage = 'Upload failed';
+
+                if (error.response) {
+                    // Server responded with error
+                    console.log('Error response:', error.response.data);
+                    errorMessage += `: ${error.response.status} - ${error.response.data.message || error.message}`;
+                } else if (error.request) {
+                    // Request made but no response
+                    errorMessage += ': No response from server';
+                } else {
+                    // Other error
+                    errorMessage += `: ${error.message}`;
+                }
+
+                status.textContent = errorMessage;
+                status.className = 'status error';
+
+                // Display error details
+                result.style.display = 'block';
+                resultContent.textContent = JSON.stringify({
+                    success: false,
+                    error: error.message,
+                    details: error.response ? error.response.data : null
+                }, null, 2);
+            }
+
+            // Re-enable upload button
+            uploadBtn.disabled = false;
+        });
+    </script>
+</body>
+
+</html>
