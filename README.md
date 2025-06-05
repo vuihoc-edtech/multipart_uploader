@@ -2,6 +2,9 @@
 
 MultipartUploader là một thư viện Flutter giúp upload file lên S3 với khả năng chia nhỏ file, tự động điều chỉnh số lượng upload song song, và khả năng tiếp tục upload khi bị ngắt kết nối.
 
+## Demo
+![MultipartUploader Demo](https://raw.githubusercontent.com/vuihoc-edtech/multipart_uploader/refs/heads/main/example/screenshots/demo.webp)
+
 ## Tính năng
 
 - **Chia nhỏ file**: Tự động chia file thành các phần nhỏ để upload song song
