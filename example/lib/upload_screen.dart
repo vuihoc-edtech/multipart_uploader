@@ -32,8 +32,7 @@ class _UploadScreenState extends State<UploadScreen> {
   int duration = 0;
 
   final baseUrl = 'https://devapi.vuihoc.vn';
-  final token =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTY5ODYsImlhdCI6MTc0NzEyODU4MywiZXhwIjoxNzUyMzEyNTgzfQ.BU_2bVPdRXi8t5COoEA1hXQFBiVpUAGQhVIiffgfRyo';
+  final token = 'Token';
 
   /// Lấy link upload từ server
   /// Trả về UploadResponse chứa thông tin upload lên S3
