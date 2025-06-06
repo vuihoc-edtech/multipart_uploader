@@ -79,7 +79,7 @@ class FileSelectionWidget extends StatelessWidget {
                                     final size = (snapshot.data! / 1024 / 1024)
                                         .toStringAsFixed(2);
                                     return Text(
-                                      'Kích thước: ${size} MB',
+                                      'Kích thước: $size MB',
                                     );
                                   }
                                   return const Text(

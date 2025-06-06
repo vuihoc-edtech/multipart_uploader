@@ -70,10 +70,10 @@ class _UploadScreenState extends State<UploadScreen> {
     final body = {
       'uploadId': uploadResponse.uploadId,
       'key': uploadResponse.s3Key,
-      'parts': uploadResponse.s3UploadUrl.map((e) => e.toJson()).toList(),
+      'parts': uploadResponse.s3UploadUrl.map((e) => e.toRequest()).toList(),
       'link_store': uploadResponse.s3Link,
-      'result_id': 4,
-      'section_type': 9,
+      'result_id': 4, // cái màn đó ban đầu phải get thông tin bài tập dự án, xong rồi mới có chỗ để upload file lên ấy a// cái resultId là cái api get thông tin bài tập ấy a
+      'section_type': SectionType.video.value,
     };
 
     log(jsonEncode(body), name: 'Submit Completed');

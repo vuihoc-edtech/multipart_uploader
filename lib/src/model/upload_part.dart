@@ -39,4 +39,8 @@ class UploadPart {
       'PartNumber': id,
     };
   }
+
+  Map<String, dynamic> toRequest() {
+    return {'ETag': etag, 'PartNumber': id};
+  }
 }
