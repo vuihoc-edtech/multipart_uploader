@@ -3,13 +3,13 @@ import 'upload_part.dart';
 class UploadResponse {
   final List<UploadPart> s3UploadUrl;
   final String s3Link;
-  final String uploadId;
+  final String? uploadId;
   final String s3Key;
 
   UploadResponse({
     required this.s3UploadUrl,
     required this.s3Link,
-    required this.uploadId,
+    this.uploadId,
     required this.s3Key,
   });
 
